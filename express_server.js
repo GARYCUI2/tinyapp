@@ -32,8 +32,37 @@ app.get("/urls", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  let longValue = req.body.longURL;
+  let shortRandom = generateRandomString();
+  urlDatabase[shortRandom] = longValue;
+  res.redirect("/urls/" + shortRandom);
+  //res.send("Ok");         // Respond with 'Ok' (we will replace this)
+});
+
+
+app.post("/urls/:shortURL/delete", (req, res) => {
+  let deletItem = req.params.shortURL;
+  delete urlDatabase[deletItem];
+  res.redirect("/urls");
+});
+
+//update URL
+app.post("/urls/:id", (req, res) => {
+  let newURL = req.body.newURL;
+  
+  let shortURL = req.params.id;
+  urlDatabase[shortURL] = newURL;
+  //let updateItem = req.params.id;
+  //urlDatabase[deletItem];
+  res.redirect("/urls");
+});
+
+
+app.get("/u/:shortURL", (req, res) => {
+  //console.log(req);
+  const short = req.params.shortURL;
+  const longURL = urlDatabase[short];
+  res.redirect(longURL);
 });
 
 app.get("/urls/new", (req, res) => {
@@ -51,17 +80,10 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
-app.get("/set", (req, res) => {
-  const a = 1;
-  res.send(`a = ${a}`);
-});
- 
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
-
-
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
