@@ -2,14 +2,20 @@
 /* eslint-disable func-style */
 const express = require("express");
 const bodyParser = require("body-parser");
-const cookies = require("cookie-parser");
-const { urlDatabase, users } = require("./db");
+const cookieSession = require('cookie-session');
+const bcrypt = require('bcryptjs');
+
+const {getUserByEmail} = require("./helpers");
+const { urlDatabase, users } = require("./datebase");
 
 const PORT = 8080; // default port 8080
 
 const app = express();
-app.use(cookies());
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieSession({
+  name: 'session',
+  keys: ["Pokemon"]
+}));
 
 app.set("view engine", "ejs");
 
@@ -32,14 +38,17 @@ app.post("/register", (req, res) => {
     return res.redirect(400, "/register");
   }
 
+  //hash password
+  const hashedPassword = bcrypt.hashSync(password, 10);
+
   const newUser = {
     id: newRandomId,
     email: email,
-    password: password
+    password: hashedPassword
   };
 
   // check if email has been already used
-  const user = findUserByEmail(email);
+  const user = getUserByEmail(email,users);
   if (user) {
     console.log("error: email has been used");
     return res.redirect(400, "/register");
@@ -47,7 +56,7 @@ app.post("/register", (req, res) => {
 
   // store new user to db and set cookie
   users[newRandomId] = newUser;
-  res.cookie("user_id",newRandomId);
+  req.session.user_id = newRandomId;
     
   res.redirect("/urls");
 });
@@ -58,7 +67,7 @@ app.post("/register", (req, res) => {
 app.get("/register", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    user: users[req.cookies["user_id"]]
+    user: users[req.session.user_id]
   };
   
   res.render("urls_register",templateVars);
@@ -75,7 +84,7 @@ app.get("/login",(req,res) => {
   
   const templateVars = {
     urls: urlDatabase,
-    user: users[req.cookies["user_id"]]
+    user: users[req.session.user_id]
   };
   
   res.render("urls_login",templateVars);
@@ -89,22 +98,22 @@ app.post("/login",(req,res) => {
   const password = req.body.password;
   
   // check if email is correct
-  const user = findUserByEmail(email);
+  const user = getUserByEmail(email,users);
 
   // no user email found, redirect to login page
   if (!user) {
     console.log("error: email or password is wrong");
     return res.redirect(403, "/login");
   }
-
+  
   // password is wrong, redirect to login page
-  if (user.password !== password) {
+  if (!bcrypt.compareSync(password, user.password)) {
     console.log("error: email or password is wrong");
     return res.redirect(403, "/login");
   }
-  
+
   // set cookie and redirect to main page
-  res.cookie("user_id", user.id);
+  req.session.user_id = user.id;
   res.redirect("/urls");
 });
   
@@ -117,7 +126,7 @@ app.post("/login",(req,res) => {
 //
 app.post("/logout", (req, res) => {
   //clear cookies
-  res.clearCookie("user_id");
+  req.session = null;
   
   // back to login
   res.redirect("/login");
@@ -133,7 +142,7 @@ app.post("/logout", (req, res) => {
 //
 app.get("/urls", (req, res) => {
   // get user id from cookie
-  let userID = req.cookies["user_id"];
+  let userID = req.session.user_id;
 
   //check if login
   if (!userID) {
@@ -154,7 +163,7 @@ app.get("/urls", (req, res) => {
 //
 app.post("/urls", (req, res) => {
   // get user id from cookie
-  let userID = req.cookies["user_id"];
+  let userID = req.session.user_id;
 
   //check if login
   if (!userID) {
@@ -186,12 +195,12 @@ app.post("/urls", (req, res) => {
 //
 app.get("/urls/new", (req, res) => {
   // check if login
-  if (!req.cookies["user_id"]) {
-    return res.redirect("/register");
+  if (!req.session.user_id) {
+    return res.redirect("/login");
   }
 
   const templateVars = {
-    user: users[req.cookies["user_id"]]
+    user: users[req.session.user_id]
   };
     
   res.render("urls_new", templateVars);
@@ -206,7 +215,7 @@ app.get("/urls/new", (req, res) => {
 //
 app.get("/urls/:shortURL", (req, res) => {
   // get user id from cookie
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
   const shortURL = req.params.shortURL;
 
   // check if login
@@ -225,13 +234,13 @@ app.get("/urls/:shortURL", (req, res) => {
 
   if (!urlItem) {
     console.log("no such short url in db");
-    return res.redirect("/urls");
+    return res.redirect(404,"/urls");
   }
 
   const templateVars = {
     shortURL: shortURL,
     longURL: urlItem.longURL,
-    user: users[req.cookies["user_id"]]
+    user: users[req.session.user_id]
   };
 
   res.render("urls_show", templateVars);
@@ -243,7 +252,7 @@ app.get("/urls/:shortURL", (req, res) => {
 app.post("/urls/:id", (req, res) => {
   // get user id from cookie
   // get shortURL from req params
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
   let shortURL = req.params.id;
 
   // check if login
@@ -277,7 +286,7 @@ app.post("/urls/:id", (req, res) => {
 app.get("/urls/:shortURL/delete", (req, res) => {
   // get user id from cookie
   // get shortURL from req params to delete
-  const id = req.cookies["user_id"];
+  const id = req.session.user_id;
   let deletItem = req.params.shortURL;
 
   // check if login
@@ -323,7 +332,12 @@ app.get("/u/:shortURL", (req, res) => {
 ////test for basic setup
 //
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  let userID = req.session.user_id;
+
+  if (!userID) {
+    return res.redirect("/login");
+  }
+  return res.redirect("/urls");
 });
 
 app.get("/hello", (req, res) => {
@@ -357,12 +371,6 @@ function generateRandomString() {
 //// userID => urls
 //
 const urlsForUser = function(id) {
-  // for (let shortUrl in urlDatabase) {
-  //   if (urlDatabase[shortUrl].userID === id) {
-  //     return urlDatabase[shortUrl].longURL;
-  //   }
-  // }
-  // return null;
   const urls = {};
   for (let shortURL in urlDatabase) {
     if (urlDatabase[shortURL].userID === id) {
@@ -374,16 +382,3 @@ const urlsForUser = function(id) {
 };
 
 
-//
-////find user by email
-////return user object if found, otherwis null
-//
-const findUserByEmail = (email) => {
-  for (const userId in users) {
-    const user = users[userId];
-    if (user.email === email) {
-      return user;
-    }
-  }
-  return null;
-};
