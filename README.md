@@ -6,7 +6,7 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 !["Login sample"](./picture/login.png)
 
-!["Main menu"]("./picture/main.png")
+!["Main menu"](./picture/main.png)
 
 ## Dependencies
 
