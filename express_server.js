@@ -5,7 +5,7 @@ const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 
-const {getUserByEmail} = require("./helpers");
+const {getUserByEmail,urlsForUser, generateRandomString} = require("./helpers/helpers");
 const { urlDatabase, users } = require("./datebase");
 
 const PORT = 8080; // default port 8080
@@ -352,33 +352,3 @@ app.get("/urls.json", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
-//
-////Helper: Generate Random String as shortURL
-//
-function generateRandomString() {
-  let result = '';
-  let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let charactersLength = characters.length;
-  for (let i = 0; i < 6; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-  return result;
-}
-
-//
-//// filter url db to return current user's urls
-//// userID => urls
-//
-const urlsForUser = function(id) {
-  const urls = {};
-  for (let shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userID === id) {
-      urls[shortURL] = urlDatabase[shortURL];
-    }
-  }
-
-  return urls;
-};
-
-
