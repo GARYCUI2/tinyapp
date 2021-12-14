@@ -1,4 +1,4 @@
-const urlDatabase = require("../datebase");
+const { urlDatabase } = require("../datebase");
 //
 ////find user in datebase by email
 ////return user object if found, otherwis null
