@@ -146,8 +146,12 @@ app.get("/urls", (req, res) => {
 
   //check if login
   if (!userID) {
-    console.log("error: not login");
-    return res.redirect("/login");
+    const templateVars = {
+      user: users[req.session.user_id],
+      error: "Please login first"
+    };
+      
+    return res.render("error", templateVars);
   }
   
   const templateVars = {
@@ -167,8 +171,12 @@ app.post("/urls", (req, res) => {
 
   //check if login
   if (!userID) {
-    console.log("error: not login");
-    return res.redirect("/login");
+    const templateVars = {
+      user: users[req.session.user_id],
+      error: "Please login first"
+    };
+      
+    return res.render("error", templateVars);
   }
 
   // get long url input by user
@@ -220,8 +228,12 @@ app.get("/urls/:shortURL", (req, res) => {
 
   // check if login
   if (!userID) {
-    console.log("not login yet, please login first");
-    return res.redirect("/login");
+    const templateVars = {
+      user: users[req.session.user_id],
+      error: "Please login first"
+    };
+      
+    return res.render("error", templateVars);
   }
 
   // check if short url user id is current user
@@ -257,8 +269,12 @@ app.post("/urls/:id", (req, res) => {
 
   // check if login
   if (!userID) {
-    console.log("not login yet, please login first");
-    return res.redirect("/login");
+    const templateVars = {
+      user: users[req.session.user_id],
+      error: "Please login first"
+    };
+      
+    return res.render("error", templateVars);
   }
 
   // check if short url user id is current user
@@ -291,8 +307,12 @@ app.get("/urls/:shortURL/delete", (req, res) => {
 
   // check if login
   if (!id) {
-    console.log("not login yet, please login first");
-    return res.redirect("/login");
+    const templateVars = {
+      user: users[req.session.user_id],
+      error: "Please login first"
+    };
+      
+    return res.render("error", templateVars);
   }
 
   // check if current user has access to deleting shortURL
