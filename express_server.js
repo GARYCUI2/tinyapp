@@ -236,17 +236,26 @@ app.get("/urls/:shortURL", (req, res) => {
     return res.render("error", templateVars);
   }
 
-  // check if short url user id is current user
-  if (urlDatabase[shortURL] && urlDatabase[shortURL].userID !== userID) {
-    console.log("this url not belong your id");
-    return res.redirect("/urls");
-  }
-
+  // check if shortURL exists
   let urlItem = urlDatabase[shortURL];
 
   if (!urlItem) {
-    console.log("no such short url in db");
-    return res.redirect(404,"/urls");
+    const templateVars = {
+      user: users[req.session.user_id],
+      error: "No URL with given ID found"
+    };
+      
+    return res.render("error", templateVars);
+  }
+
+  // check if short url user id is current user
+  if (urlDatabase[shortURL].userID !== userID) {
+    const templateVars = {
+      user: users[req.session.user_id],
+      error: "No access to the URL with given ID"
+    };
+      
+    return res.render("error", templateVars);
   }
 
   const templateVars = {
@@ -277,10 +286,27 @@ app.post("/urls/:id", (req, res) => {
     return res.render("error", templateVars);
   }
 
+  // check if shortURL exists
+  let urlItem = urlDatabase[shortURL];
+
+  if (!urlItem) {
+    const templateVars = {
+      user: users[req.session.user_id],
+      error: "No URL with given ID found"
+    };
+      
+    return res.render("error", templateVars);
+  }
+
   // check if short url user id is current user
-  if (urlDatabase[shortURL] && urlDatabase[shortURL].userID !== userID) {
-    console.log("this url not belong your id");
-    return res.redirect("/urls");
+  if (urlDatabase[shortURL].userID !== userID) {
+
+    const templateVars = {
+      user: users[req.session.user_id],
+      error: "No access to the URL with given ID"
+    };
+      
+    return res.render("error", templateVars);
   }
 
   // new long url input by user
@@ -299,11 +325,11 @@ app.post("/urls/:id", (req, res) => {
 //
 ////DELETE a shortURL record in url db
 //
-app.get("/urls/:shortURL/delete", (req, res) => {
+app.post("/urls/:shortURL/delete", (req, res) => {
   // get user id from cookie
   // get shortURL from req params to delete
   const id = req.session.user_id;
-  let deletItem = req.params.shortURL;
+  let deleteItem = req.params.shortURL;
 
   // check if login
   if (!id) {
@@ -315,13 +341,29 @@ app.get("/urls/:shortURL/delete", (req, res) => {
     return res.render("error", templateVars);
   }
 
-  // check if current user has access to deleting shortURL
-  if (urlDatabase[deletItem] && urlDatabase[deletItem].userID !== id) {
-    console.log("this url not belong your id");
-    return res.redirect("/urls");
+  // check if deleteItem exists
+  let urlItem = urlDatabase[deleteItem];
+
+  if (!urlItem) {
+    const templateVars = {
+      user: users[req.session.user_id],
+      error: "No URL with given ID found"
+    };
+      
+    return res.render("error", templateVars);
   }
 
-  delete urlDatabase[deletItem];
+  // check if current user has access to deleting shortURL
+  if (urlDatabase[deleteItem].userID !== id) {
+    const templateVars = {
+      user: users[req.session.user_id],
+      error: "No access to the URL with given ID"
+    };
+      
+    return res.render("error", templateVars);
+  }
+
+  delete urlDatabase[deleteItem];
   res.redirect("/urls");
 });
 
